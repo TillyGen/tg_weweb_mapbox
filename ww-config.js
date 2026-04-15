@@ -3,6 +3,13 @@ export default {
         label: { en: 'Mapbox Map' },
         icon: 'map',
     },
+    actions: [
+        {
+            action: 'searchAddress',
+            label: { en: 'Search address' },
+            args: [{ name: 'query', type: 'string' }],
+        },
+    ],
     triggerEvents: [
         { name: 'map-load', label: { en: 'On map load' }, event: {} },
         {
@@ -25,8 +32,52 @@ export default {
             label: { en: 'On search result selected' },
             event: { result: {} },
         },
+        {
+            name: 'address-suggestions',
+            label: { en: 'On address suggestions' },
+            event: { suggestions: [], query: '' },
+        },
     ],
     properties: {
+        mode: {
+            label: { en: 'Mode' },
+            type: 'TextSelect',
+            section: 'settings',
+            options: {
+                options: [
+                    { value: 'map', label: 'Map' },
+                    { value: 'addressSearch', label: 'Address search' },
+                ],
+            },
+            defaultValue: 'map',
+            bindable: true,
+        },
+        searchContent: {
+            hidden: content => content?.mode !== 'addressSearch',
+            defaultValue: [],
+            type: 'Array',
+            options: {
+                item: { type: 'wwObject', options: { linkable: true } },
+            },
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'array',
+                tooltip: 'Drop your custom input / suggestion list UI here',
+            },
+            /* wwEditor:end */
+        },
+        searchLimit: {
+            label: { en: 'Suggestion limit' },
+            type: 'Number',
+            section: 'settings',
+            options: { min: 1, max: 10, step: 1 },
+            defaultValue: 5,
+            bindable: true,
+            hidden: content => content?.mode !== 'addressSearch',
+            /* wwEditor:start */
+            bindingValidation: { type: 'number', tooltip: 'Max number of suggestions (1-10)' },
+            /* wwEditor:end */
+        },
         // ────── Access ──────
         accessToken: {
             label: { en: 'Mapbox Access Token' },

@@ -1,5 +1,11 @@
 <template>
-    <div class="mapbox-element" :class="{ 'mapbox-element--hide-attribution': content?.hideAttribution }" :style="rootStyle">
+    <div
+        v-if="content?.mode === 'addressSearch'"
+        class="mapbox-element mapbox-element--search-mode"
+    >
+        <wwLayout path="searchContent" class="mapbox-element__search-slot" />
+    </div>
+    <div v-else class="mapbox-element" :class="{ 'mapbox-element--hide-attribution': content?.hideAttribution }" :style="rootStyle">
         <div :id="mapContainerId" ref="mapContainer" class="mapbox-element__map" />
 
         <div
@@ -573,9 +579,47 @@ export default {
             emit('trigger-event', { name: 'search-select', event: { result } });
         };
 
+        const searchAddress = async query => {
+            const token = props.content?.accessToken;
+            const q = typeof query === 'string' ? query : '';
+            if (!token || !q.trim()) {
+                emit('trigger-event', {
+                    name: 'address-suggestions',
+                    event: { suggestions: [], query: q },
+                });
+                return [];
+            }
+            const params = new URLSearchParams({
+                access_token: token,
+                autocomplete: 'true',
+                limit: String(props.content?.searchLimit || 5),
+            });
+            if (props.content?.searchLanguage) params.append('language', props.content.searchLanguage);
+            if (props.content?.searchCountry) params.append('country', props.content.searchCountry);
+            if (props.content?.searchProximity) params.append('proximity', props.content.searchProximity);
+            try {
+                const res = await fetch(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?${params.toString()}`
+                );
+                const data = await res.json();
+                const suggestions = Array.isArray(data.features) ? data.features : [];
+                emit('trigger-event', {
+                    name: 'address-suggestions',
+                    event: { suggestions, query: q },
+                });
+                return suggestions;
+            } catch (err) {
+                emit('trigger-event', {
+                    name: 'address-suggestions',
+                    event: { suggestions: [], query: q },
+                });
+                return [];
+            }
+        };
+
         onMounted(async () => {
             await nextTick();
-            initMap();
+            if (props.content?.mode !== 'addressSearch') initMap();
         });
 
         onBeforeUnmount(() => {
@@ -686,6 +730,7 @@ export default {
             rootStyle,
             spinnerStyle,
             isRouteLoading,
+            searchAddress,
             searchQuery,
             searchResults,
             searchFocused,
@@ -707,6 +752,15 @@ export default {
     height: 100%;
     overflow: hidden;
     border-radius: inherit;
+
+    &--search-mode {
+        height: auto;
+        overflow: visible;
+    }
+
+    &__search-slot {
+        width: 100%;
+    }
 
     &--hide-attribution {
         :deep(.mapboxgl-ctrl-attrib),
