@@ -1,6 +1,6 @@
 <template>
     <div class="mapbox-element" :style="rootStyle">
-        <div ref="mapContainer" class="mapbox-element__map" />
+        <div :id="mapContainerId" ref="mapContainer" class="mapbox-element__map" />
 
         <div v-if="content?.showSearchBox" class="mapbox-element__search">
             <input
@@ -85,6 +85,7 @@ export default {
     emits: ['trigger-event'],
     setup(props, { emit }) {
         const mapContainer = ref(null);
+        const mapContainerId = computed(() => `mapbox-element-${props.uid}`);
         let map = null;
         let markerInstances = [];
 
@@ -219,7 +220,7 @@ export default {
             mapboxgl.accessToken = token;
 
             map = new mapboxgl.Map({
-                container: mapContainer.value,
+                container: mapContainerId.value,
                 style: `mapbox://styles/mapbox/${props.content?.mapStyle || 'streets-v12'}`,
                 center: getInitialCenter(),
                 zoom: Number(props.content?.zoom ?? 2),
@@ -545,6 +546,7 @@ export default {
 
         return {
             mapContainer,
+            mapContainerId,
             rootStyle,
             searchQuery,
             searchResults,
