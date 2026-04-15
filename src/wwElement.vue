@@ -2,7 +2,12 @@
     <div class="mapbox-element" :class="{ 'mapbox-element--hide-attribution': content?.hideAttribution }" :style="rootStyle">
         <div :id="mapContainerId" ref="mapContainer" class="mapbox-element__map" />
 
-        <div v-if="isRouteLoading" class="mapbox-element__route-spinner" aria-hidden="true" />
+        <div
+            v-if="isRouteLoading"
+            class="mapbox-element__route-spinner"
+            :style="spinnerStyle"
+            aria-hidden="true"
+        />
 
         <div v-if="content?.showSearchBox" class="mapbox-element__search">
             <input
@@ -127,6 +132,10 @@ export default {
             type: 'string',
             defaultValue: '',
         });
+
+        const spinnerStyle = computed(() => ({
+            borderTopColor: resolveColor(props.content?.spinnerColor, '#3b82f6'),
+        }));
 
         const rootStyle = computed(() => ({
             position: 'relative',
@@ -675,6 +684,7 @@ export default {
             mapContainer,
             mapContainerId,
             rootStyle,
+            spinnerStyle,
             isRouteLoading,
             searchQuery,
             searchResults,
@@ -717,10 +727,8 @@ export default {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        border: 2px solid rgba(0, 0, 0, 0.15);
+        border: 2px solid transparent;
         border-top-color: #3b82f6;
-        background: rgba(255, 255, 255, 0.9);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         box-sizing: border-box;
         z-index: 3;
         animation: mapbox-element-spin 0.8s linear infinite;

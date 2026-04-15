@@ -466,6 +466,14 @@ export default {
             },
             /* wwEditor:end */
         },
+        spinnerColor: {
+            label: { en: 'Loading spinner color' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: '#3b82f6',
+            bindable: true,
+            hidden: content => !content?.showDirections,
+        },
         routeColor: {
             label: { en: 'Route color' },
             type: 'Color',
