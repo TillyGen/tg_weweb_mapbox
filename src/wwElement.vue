@@ -1,6 +1,12 @@
 <template>
-    <div class="mapbox-element" :style="rootStyle">
+    <div class="mapbox-element" :class="{ 'mapbox-element--hide-attribution': content?.hideAttribution }" :style="rootStyle">
         <div :id="mapContainerId" ref="mapContainer" class="mapbox-element__map" />
+
+        <div v-if="isRouteLoading" class="mapbox-element__route-skeleton" aria-hidden="true">
+            <div class="mapbox-element__route-skeleton-bar" />
+            <div class="mapbox-element__route-skeleton-bar mapbox-element__route-skeleton-bar--short" />
+            <div class="mapbox-element__route-skeleton-bar" />
+        </div>
 
         <div v-if="content?.showSearchBox" class="mapbox-element__search">
             <input
@@ -131,6 +137,8 @@ export default {
             width: '100%',
             height: props.content?.height || '400px',
             minHeight: '200px',
+            borderRadius: props.content?.borderRadius || '0px',
+            overflow: 'hidden',
         }));
 
         const resolveFormula = (formula, item, fallback) => {
@@ -339,6 +347,7 @@ export default {
             if (!map || !map.isStyleLoaded() || !mapContainer.value) return;
             const mapboxgl = mapContainer.value.ownerDocument.defaultView.mapboxgl;
             if (!mapboxgl) return;
+            isRouteLoading.value = true;
             try {
                 const data = await fetchDirections();
                 if (!data || !Array.isArray(data.routes) || !data.routes.length) {
@@ -393,8 +402,12 @@ export default {
                 emit('trigger-event', { name: 'route-loaded', event: { route: routeData } });
             } catch (err) {
                 console.error('[Mapbox element] directions error', err);
+            } finally {
+                isRouteLoading.value = false;
             }
         };
+
+        const isRouteLoading = ref(false);
 
         const searchQuery = ref('');
         const searchResults = ref([]);
@@ -548,6 +561,7 @@ export default {
             mapContainer,
             mapContainerId,
             rootStyle,
+            isRouteLoading,
             searchQuery,
             searchResults,
             searchFocused,
@@ -570,9 +584,51 @@ export default {
     overflow: hidden;
     border-radius: inherit;
 
+    &--hide-attribution {
+        :deep(.mapboxgl-ctrl-attrib),
+        :deep(.mapboxgl-ctrl-logo),
+        :deep(.mapboxgl-ctrl-bottom-right),
+        :deep(.mapboxgl-ctrl-bottom-left) {
+            display: none !important;
+        }
+    }
+
     &__map {
         width: 100%;
         height: 100%;
+    }
+
+    &__route-skeleton {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(2px);
+        pointer-events: none;
+    }
+
+    &__route-skeleton-bar {
+        width: min(320px, 70%);
+        height: 14px;
+        border-radius: 7px;
+        background: linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.08) 0%,
+            rgba(0, 0, 0, 0.16) 50%,
+            rgba(0, 0, 0, 0.08) 100%
+        );
+        background-size: 200% 100%;
+        animation: mapbox-element-skeleton 1.2s ease-in-out infinite;
+
+        &--short {
+            width: min(200px, 45%);
+        }
     }
 
     &__search {
@@ -621,6 +677,11 @@ export default {
         &:hover {
             background: #f4f4f5;
         }
+    }
+
+    @keyframes mapbox-element-skeleton {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
     }
 
     /* wwEditor:start */

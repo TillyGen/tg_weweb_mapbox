@@ -141,6 +141,22 @@ export default {
             defaultValue: '400px',
             bindable: true,
         },
+        borderRadius: {
+            label: { en: 'Border radius' },
+            type: 'Length',
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 0, max: 200 },
+                    { value: '%', label: '%', min: 0, max: 50 },
+                ],
+            },
+            defaultValue: '0px',
+            bindable: true,
+            /* wwEditor:start */
+            bindingValidation: { type: 'string', tooltip: 'CSS length, e.g. "12px" or "50%"' },
+            /* wwEditor:end */
+        },
 
         // ────── Controls ──────
         showNavigationControl: {
@@ -181,6 +197,19 @@ export default {
             bindable: true,
             /* wwEditor:start */
             bindingValidation: { type: 'boolean', tooltip: 'Show scale bar' },
+            /* wwEditor:end */
+        },
+        hideAttribution: {
+            label: { en: 'Hide Mapbox attribution' },
+            type: 'OnOff',
+            section: 'settings',
+            defaultValue: false,
+            bindable: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'boolean',
+                tooltip: 'Hides the (i) attribution. Note: Mapbox ToS may require attribution on free plans.',
+            },
             /* wwEditor:end */
         },
 
