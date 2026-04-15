@@ -37,8 +37,42 @@
 
 <script>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+
+const MAPBOX_VERSION = 'v2.15.0';
+const MAPBOX_JS_URL = `https://api.mapbox.com/mapbox-gl-js/${MAPBOX_VERSION}/mapbox-gl.js`;
+const MAPBOX_CSS_URL = `https://api.mapbox.com/mapbox-gl-js/${MAPBOX_VERSION}/mapbox-gl.css`;
+
+let mapboxLoadPromise = null;
+const loadMapbox = () => {
+    const doc = wwLib.getFrontDocument();
+    const win = wwLib.getFrontWindow();
+    if (win.mapboxgl) return Promise.resolve(win.mapboxgl);
+    if (mapboxLoadPromise) return mapboxLoadPromise;
+
+    mapboxLoadPromise = new Promise((resolve, reject) => {
+        if (!doc.querySelector(`link[data-mapbox-gl="${MAPBOX_VERSION}"]`)) {
+            const link = doc.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = MAPBOX_CSS_URL;
+            link.dataset.mapboxGl = MAPBOX_VERSION;
+            doc.head.appendChild(link);
+        }
+        const existing = doc.querySelector(`script[data-mapbox-gl="${MAPBOX_VERSION}"]`);
+        if (existing) {
+            existing.addEventListener('load', () => resolve(win.mapboxgl));
+            existing.addEventListener('error', reject);
+            return;
+        }
+        const script = doc.createElement('script');
+        script.src = MAPBOX_JS_URL;
+        script.async = true;
+        script.dataset.mapboxGl = MAPBOX_VERSION;
+        script.onload = () => resolve(win.mapboxgl);
+        script.onerror = reject;
+        doc.head.appendChild(script);
+    });
+    return mapboxLoadPromise;
+};
 
 export default {
     props: {
@@ -150,10 +184,18 @@ export default {
             return [0, 20];
         };
 
-        const initMap = () => {
+        const initMap = async () => {
             if (!mapContainer.value) return;
             const token = props.content?.accessToken;
             if (!token) return;
+            let mapboxgl;
+            try {
+                mapboxgl = await loadMapbox();
+            } catch (err) {
+                console.error('[Mapbox element] failed to load mapbox-gl', err);
+                return;
+            }
+            if (!mapboxgl) return;
             if (map) {
                 map.remove();
                 map = null;
@@ -211,6 +253,8 @@ export default {
 
         const syncMarkers = () => {
             if (!map) return;
+            const mapboxgl = wwLib.getFrontWindow().mapboxgl;
+            if (!mapboxgl) return;
             markerInstances.forEach(m => m.remove());
             markerInstances = [];
             processedMarkers.value.forEach(markerData => {
@@ -277,6 +321,8 @@ export default {
 
         const syncRoute = async () => {
             if (!map || !map.isStyleLoaded()) return;
+            const mapboxgl = wwLib.getFrontWindow().mapboxgl;
+            if (!mapboxgl) return;
             try {
                 const data = await fetchDirections();
                 if (!data || !Array.isArray(data.routes) || !data.routes.length) {
