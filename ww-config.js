@@ -18,7 +18,7 @@ export default {
         {
             name: 'route-loaded',
             label: { en: 'On route loaded' },
-            event: { route: {} },
+            event: { route: {}, distance: 0, duration: 0 },
         },
         {
             name: 'search-select',
@@ -197,6 +197,26 @@ export default {
             bindable: true,
             /* wwEditor:start */
             bindingValidation: { type: 'boolean', tooltip: 'Show scale bar' },
+            /* wwEditor:end */
+        },
+        show3dBuildings: {
+            label: { en: '3D buildings' },
+            type: 'OnOff',
+            section: 'settings',
+            defaultValue: false,
+            bindable: true,
+            /* wwEditor:start */
+            bindingValidation: { type: 'boolean', tooltip: 'Render 3D building extrusions' },
+            /* wwEditor:end */
+        },
+        showTraffic: {
+            label: { en: 'Traffic layer' },
+            type: 'OnOff',
+            section: 'settings',
+            defaultValue: false,
+            bindable: true,
+            /* wwEditor:start */
+            bindingValidation: { type: 'boolean', tooltip: 'Show Mapbox live traffic layer' },
             /* wwEditor:end */
         },
         hideAttribution: {

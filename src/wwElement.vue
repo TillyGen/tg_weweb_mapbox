@@ -259,6 +259,8 @@ export default {
             map.on('load', () => {
                 setMapReady(true);
                 syncMarkers();
+                sync3dBuildings();
+                syncTraffic();
                 syncRoute();
                 emit('trigger-event', { name: 'map-load', event: {} });
             });
@@ -337,6 +339,81 @@ export default {
             return response.json();
         };
 
+        const sync3dBuildings = () => {
+            if (!map || !map.isStyleLoaded()) return;
+            const layerId = 'mapbox-element-3d-buildings';
+            const existing = map.getLayer(layerId);
+            if (props.content?.show3dBuildings) {
+                if (existing) return;
+                const layers = map.getStyle().layers || [];
+                const labelLayer = layers.find(
+                    l => l.type === 'symbol' && l.layout && l.layout['text-field']
+                );
+                map.addLayer(
+                    {
+                        id: layerId,
+                        source: 'composite',
+                        'source-layer': 'building',
+                        filter: ['==', 'extrude', 'true'],
+                        type: 'fill-extrusion',
+                        minzoom: 14,
+                        paint: {
+                            'fill-extrusion-color': '#aaa',
+                            'fill-extrusion-height': [
+                                'interpolate', ['linear'], ['zoom'],
+                                14, 0, 14.5, ['get', 'height'],
+                            ],
+                            'fill-extrusion-base': [
+                                'interpolate', ['linear'], ['zoom'],
+                                14, 0, 14.5, ['get', 'min_height'],
+                            ],
+                            'fill-extrusion-opacity': 0.6,
+                        },
+                    },
+                    labelLayer?.id
+                );
+            } else if (existing) {
+                map.removeLayer(layerId);
+            }
+        };
+
+        const syncTraffic = () => {
+            if (!map || !map.isStyleLoaded()) return;
+            const sourceId = 'mapbox-element-traffic';
+            const layerId = 'mapbox-element-traffic-layer';
+            if (props.content?.showTraffic) {
+                if (!map.getSource(sourceId)) {
+                    map.addSource(sourceId, {
+                        type: 'vector',
+                        url: 'mapbox://mapbox.mapbox-traffic-v1',
+                    });
+                }
+                if (!map.getLayer(layerId)) {
+                    map.addLayer({
+                        id: layerId,
+                        type: 'line',
+                        source: sourceId,
+                        'source-layer': 'traffic',
+                        paint: {
+                            'line-width': 2,
+                            'line-color': [
+                                'match',
+                                ['get', 'congestion'],
+                                'low', '#22c55e',
+                                'moderate', '#eab308',
+                                'heavy', '#f97316',
+                                'severe', '#ef4444',
+                                '#9ca3af',
+                            ],
+                        },
+                    });
+                }
+            } else {
+                if (map.getLayer(layerId)) map.removeLayer(layerId);
+                if (map.getSource(sourceId)) map.removeSource(sourceId);
+            }
+        };
+
         const clearRoute = () => {
             if (!map) return;
             if (map.getLayer('mapbox-element-route')) map.removeLayer('mapbox-element-route');
@@ -399,7 +476,14 @@ export default {
                     legs: route.legs,
                 };
                 setCurrentRoute(routeData);
-                emit('trigger-event', { name: 'route-loaded', event: { route: routeData } });
+                emit('trigger-event', {
+                    name: 'route-loaded',
+                    event: {
+                        route: routeData,
+                        distance: route.distance,
+                        duration: route.duration,
+                    },
+                });
             } catch (err) {
                 console.error('[Mapbox element] directions error', err);
             } finally {
@@ -546,6 +630,20 @@ export default {
                 if (map && map.isStyleLoaded()) syncRoute();
             },
             { deep: true }
+        );
+
+        watch(
+            () => props.content?.show3dBuildings,
+            () => {
+                if (map && map.isStyleLoaded()) sync3dBuildings();
+            }
+        );
+
+        watch(
+            () => props.content?.showTraffic,
+            () => {
+                if (map && map.isStyleLoaded()) syncTraffic();
+            }
         );
 
         watch(
