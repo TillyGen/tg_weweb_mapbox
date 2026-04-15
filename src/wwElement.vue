@@ -196,6 +196,7 @@ export default {
                 return;
             }
             if (!mapboxgl) return;
+            if (!mapContainer.value || !(mapContainer.value instanceof wwLib.getFrontWindow().HTMLElement)) return;
             if (map) {
                 map.remove();
                 map = null;
