@@ -2,11 +2,7 @@
     <div class="mapbox-element" :class="{ 'mapbox-element--hide-attribution': content?.hideAttribution }" :style="rootStyle">
         <div :id="mapContainerId" ref="mapContainer" class="mapbox-element__map" />
 
-        <div v-if="isRouteLoading" class="mapbox-element__route-skeleton" aria-hidden="true">
-            <div class="mapbox-element__route-skeleton-bar" />
-            <div class="mapbox-element__route-skeleton-bar mapbox-element__route-skeleton-bar--short" />
-            <div class="mapbox-element__route-skeleton-bar" />
-        </div>
+        <div v-if="isRouteLoading" class="mapbox-element__route-spinner" aria-hidden="true" />
 
         <div v-if="content?.showSearchBox" class="mapbox-element__search">
             <input
@@ -714,37 +710,21 @@ export default {
         height: 100%;
     }
 
-    &__route-skeleton {
+    &__route-spinner {
         position: absolute;
-        inset: 0;
+        top: 12px;
+        left: 12px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 0, 0, 0.15);
+        border-top-color: #3b82f6;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        box-sizing: border-box;
         z-index: 3;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        padding: 24px;
-        background: rgba(255, 255, 255, 0.65);
-        backdrop-filter: blur(2px);
+        animation: mapbox-element-spin 0.8s linear infinite;
         pointer-events: none;
-    }
-
-    &__route-skeleton-bar {
-        width: min(320px, 70%);
-        height: 14px;
-        border-radius: 7px;
-        background: linear-gradient(
-            90deg,
-            rgba(0, 0, 0, 0.08) 0%,
-            rgba(0, 0, 0, 0.16) 50%,
-            rgba(0, 0, 0, 0.08) 100%
-        );
-        background-size: 200% 100%;
-        animation: mapbox-element-skeleton 1.2s ease-in-out infinite;
-
-        &--short {
-            width: min(200px, 45%);
-        }
     }
 
     &__search {
@@ -795,9 +775,8 @@ export default {
         }
     }
 
-    @keyframes mapbox-element-skeleton {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+    @keyframes mapbox-element-spin {
+        to { transform: rotate(360deg); }
     }
 
     /* wwEditor:start */
