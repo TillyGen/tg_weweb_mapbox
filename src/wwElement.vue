@@ -165,6 +165,26 @@ export default {
                 .filter(m => Number.isFinite(m.longitude) && Number.isFinite(m.latitude));
         });
 
+        const resolveColor = (value, fallback = '#3b82f6') => {
+            if (!value || typeof value !== 'string') return fallback;
+            const trimmed = value.trim();
+            if (trimmed.startsWith('var(')) {
+                const match = trimmed.match(/var\([^,]+,\s*(.+)\)\s*$/);
+                if (match) return resolveColor(match[1].trim(), fallback);
+                if (mapContainer.value) {
+                    const varName = trimmed.match(/var\(\s*(--[^,)\s]+)/)?.[1];
+                    if (varName) {
+                        const computed = getComputedStyle(mapContainer.value)
+                            .getPropertyValue(varName)
+                            .trim();
+                        if (computed) return computed;
+                    }
+                }
+                return fallback;
+            }
+            return trimmed;
+        };
+
         const parseLonLat = value => {
             if (value === undefined || value === null || value === '') return null;
             if (Array.isArray(value) && value.length >= 2) {
@@ -284,7 +304,7 @@ export default {
             markerInstances.forEach(m => m.remove());
             markerInstances = [];
             processedMarkers.value.forEach(markerData => {
-                const marker = new mapboxgl.Marker({ color: markerData.color })
+                const marker = new mapboxgl.Marker({ color: resolveColor(markerData.color, '#3b82f6') })
                     .setLngLat([markerData.longitude, markerData.latitude])
                     .addTo(map);
                 if (markerData.label) {
@@ -440,7 +460,7 @@ export default {
                         map.setPaintProperty(
                             'mapbox-element-route',
                             'line-color',
-                            props.content?.routeColor || '#3b82f6'
+                            resolveColor(props.content?.routeColor, '#3b82f6')
                         );
                         map.setPaintProperty(
                             'mapbox-element-route',
@@ -456,7 +476,7 @@ export default {
                         source: 'mapbox-element-route',
                         layout: { 'line-join': 'round', 'line-cap': 'round' },
                         paint: {
-                            'line-color': props.content?.routeColor || '#3b82f6',
+                            'line-color': resolveColor(props.content?.routeColor, '#3b82f6'),
                             'line-width': Number(props.content?.routeWidth ?? 5),
                         },
                     });
