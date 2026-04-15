@@ -185,18 +185,32 @@ export default {
         };
 
         const initMap = async () => {
-            if (!mapContainer.value) return;
+            console.log('[Mapbox element] initMap called, container:', mapContainer.value);
+            if (!mapContainer.value) {
+                console.warn('[Mapbox element] aborting: container ref is null');
+                return;
+            }
             const token = props.content?.accessToken;
-            if (!token) return;
+            if (!token) {
+                console.warn('[Mapbox element] aborting: no access token');
+                return;
+            }
             let mapboxgl;
             try {
                 mapboxgl = await loadMapbox();
+                console.log('[Mapbox element] mapbox-gl loaded:', !!mapboxgl);
             } catch (err) {
                 console.error('[Mapbox element] failed to load mapbox-gl', err);
                 return;
             }
-            if (!mapboxgl) return;
-            if (!mapContainer.value || !(mapContainer.value instanceof wwLib.getFrontWindow().HTMLElement)) return;
+            if (!mapboxgl) {
+                console.warn('[Mapbox element] aborting: mapboxgl undefined after load');
+                return;
+            }
+            if (!mapContainer.value) {
+                console.warn('[Mapbox element] aborting: container ref became null after load');
+                return;
+            }
             if (map) {
                 map.remove();
                 map = null;
