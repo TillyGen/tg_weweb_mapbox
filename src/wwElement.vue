@@ -586,9 +586,7 @@ export default {
 
     &--hide-attribution {
         :deep(.mapboxgl-ctrl-attrib),
-        :deep(.mapboxgl-ctrl-logo),
-        :deep(.mapboxgl-ctrl-bottom-right),
-        :deep(.mapboxgl-ctrl-bottom-left) {
+        :deep(.mapboxgl-ctrl-bottom-right) {
             display: none !important;
         }
     }
