@@ -670,19 +670,25 @@ export default {
             clickMarkerInstances.push(marker);
 
             const addressFeatures = await reverseGeocode(lng, lat);
-            const markerEntry = { lng, lat, address: addressFeatures };
 
             if (mode === 'single') {
-                setPlacedMarkers([markerEntry]);
+                const address = Array.isArray(addressFeatures) ? addressFeatures[0] || null : null;
+                const markerEntry = { lng, lat, address };
+                setPlacedMarkers(markerEntry);
+                setLastPlacedAddress(address);
+                emit('trigger-event', {
+                    name: 'marker-placed',
+                    event: { lngLat: { lng, lat }, address },
+                });
             } else {
+                const markerEntry = { lng, lat, address: addressFeatures };
                 setPlacedMarkers([...placedMarkers.value, markerEntry]);
+                setLastPlacedAddress(addressFeatures);
+                emit('trigger-event', {
+                    name: 'marker-placed',
+                    event: { lngLat: { lng, lat }, address: addressFeatures },
+                });
             }
-            setLastPlacedAddress(addressFeatures);
-
-            emit('trigger-event', {
-                name: 'marker-placed',
-                event: { lngLat: { lng, lat }, address: addressFeatures },
-            });
         };
 
         onMounted(async () => {
