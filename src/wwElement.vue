@@ -329,6 +329,7 @@ export default {
             if (!mapboxgl) return;
             markerInstances.forEach(m => m.remove());
             markerInstances = [];
+            if (props.content?.markerMode === 'single') return;
             processedMarkers.value.forEach(markerData => {
                 const marker = new mapboxgl.Marker({ color: resolveColor(markerData.color, '#3b82f6') })
                     .setLngLat([markerData.longitude, markerData.latitude])
