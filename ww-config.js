@@ -304,15 +304,6 @@ export default {
             defaultValue: 'none',
             bindable: true,
         },
-        clickMarkerColor: {
-            label: { en: 'Click marker color' },
-            type: 'Color',
-            section: 'style',
-            defaultValue: '#ef4444',
-            bindable: true,
-            hidden: content => !content?.markerMode || content?.markerMode === 'none',
-        },
-
         // ────── Data markers ──────
         markers: {
             label: { en: 'Markers' },

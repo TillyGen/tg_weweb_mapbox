@@ -101,7 +101,6 @@ export default {
         const mapContainerId = computed(() => `mapbox-element-${props.uid}`);
         let map = null;
         let markerInstances = [];
-        let clickMarkerInstances = [];
 
         const { value: isMapReady, setValue: setMapReady } = wwLib.wwVariable.useComponentVariable({
             uid: props.uid,
@@ -269,7 +268,6 @@ export default {
                 map = null;
             }
             markerInstances = [];
-            clickMarkerInstances = [];
             mapboxgl.accessToken = token;
 
             map = new mapboxgl.Map({
@@ -649,32 +647,14 @@ export default {
         };
 
         const placeClickMarker = async (lng, lat) => {
-            if (!map || !mapContainer.value) return;
             const mode = props.content?.markerMode;
             if (!mode || mode === 'none') return;
-            const mapboxgl = mapContainer.value.ownerDocument.defaultView.mapboxgl;
-            if (!mapboxgl) return;
-
-            const color = resolveColor(props.content?.clickMarkerColor, '#ef4444');
-
-            if (mode === 'single') {
-                clickMarkerInstances.forEach(m => m.remove());
-                clickMarkerInstances = [];
-                markerInstances.forEach(m => m.remove());
-                markerInstances = [];
-            }
-
-            const marker = new mapboxgl.Marker({ color })
-                .setLngLat([lng, lat])
-                .addTo(map);
-            clickMarkerInstances.push(marker);
 
             const addressFeatures = await reverseGeocode(lng, lat);
 
             if (mode === 'single') {
                 const address = Array.isArray(addressFeatures) ? addressFeatures[0] || null : null;
-                const markerEntry = { lng, lat, address };
-                setPlacedMarkers(markerEntry);
+                setPlacedMarkers({ lng, lat, address });
                 setLastPlacedAddress(address);
                 emit('trigger-event', {
                     name: 'marker-placed',
@@ -792,8 +772,6 @@ export default {
         watch(
             () => props.content?.markerMode,
             () => {
-                clickMarkerInstances.forEach(m => m.remove());
-                clickMarkerInstances = [];
                 setPlacedMarkers([]);
                 setLastPlacedAddress(null);
             }
