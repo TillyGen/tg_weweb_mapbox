@@ -18,6 +18,11 @@ export default {
             event: { lngLat: { lng: 0, lat: 0 } },
         },
         {
+            name: 'marker-placed',
+            label: { en: 'On marker placed' },
+            event: { lngLat: { lng: 0, lat: 0 }, address: null },
+        },
+        {
             name: 'marker-click',
             label: { en: 'On marker click' },
             event: { marker: {} },
@@ -284,7 +289,31 @@ export default {
             /* wwEditor:end */
         },
 
-        // ────── Markers ──────
+        // ────── Click-to-place markers ──────
+        markerMode: {
+            label: { en: 'Click-to-place marker mode' },
+            type: 'TextSelect',
+            section: 'settings',
+            options: {
+                options: [
+                    { value: 'none', label: 'None' },
+                    { value: 'single', label: 'Single marker' },
+                    { value: 'multi', label: 'Multi marker' },
+                ],
+            },
+            defaultValue: 'none',
+            bindable: true,
+        },
+        clickMarkerColor: {
+            label: { en: 'Click marker color' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: '#ef4444',
+            bindable: true,
+            hidden: content => !content?.markerMode || content?.markerMode === 'none',
+        },
+
+        // ────── Data markers ──────
         markers: {
             label: { en: 'Markers' },
             type: 'Array',

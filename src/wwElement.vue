@@ -101,6 +101,7 @@ export default {
         const mapContainerId = computed(() => `mapbox-element-${props.uid}`);
         let map = null;
         let markerInstances = [];
+        let clickMarkerInstances = [];
 
         const { value: isMapReady, setValue: setMapReady } = wwLib.wwVariable.useComponentVariable({
             uid: props.uid,
@@ -137,6 +138,18 @@ export default {
             name: 'searchValue',
             type: 'string',
             defaultValue: '',
+        });
+        const { value: placedMarkers, setValue: setPlacedMarkers } = wwLib.wwVariable.useComponentVariable({
+            uid: props.uid,
+            name: 'placedMarkers',
+            type: 'array',
+            defaultValue: [],
+        });
+        const { value: lastPlacedAddress, setValue: setLastPlacedAddress } = wwLib.wwVariable.useComponentVariable({
+            uid: props.uid,
+            name: 'lastPlacedAddress',
+            type: 'object',
+            defaultValue: null,
         });
 
         const spinnerStyle = computed(() => ({
@@ -256,6 +269,7 @@ export default {
                 map = null;
             }
             markerInstances = [];
+            clickMarkerInstances = [];
             mapboxgl.accessToken = token;
 
             map = new mapboxgl.Map({
@@ -300,6 +314,7 @@ export default {
                     name: 'map-click',
                     event: { lngLat: { lng: e.lngLat.lng, lat: e.lngLat.lat } },
                 });
+                placeClickMarker(e.lngLat.lng, e.lngLat.lat);
             });
             map.on('moveend', () => {
                 const c = map.getCenter();
@@ -617,6 +632,57 @@ export default {
             }
         };
 
+        const reverseGeocode = async (lng, lat) => {
+            const token = props.content?.accessToken;
+            if (!token) return null;
+            const params = new URLSearchParams({ access_token: token });
+            if (props.content?.searchLanguage) params.append('language', props.content.searchLanguage);
+            try {
+                const res = await fetch(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?${params.toString()}`
+                );
+                const data = await res.json();
+                return Array.isArray(data.features) ? data.features : [];
+            } catch {
+                return null;
+            }
+        };
+
+        const placeClickMarker = async (lng, lat) => {
+            if (!map || !mapContainer.value) return;
+            const mode = props.content?.markerMode;
+            if (!mode || mode === 'none') return;
+            const mapboxgl = mapContainer.value.ownerDocument.defaultView.mapboxgl;
+            if (!mapboxgl) return;
+
+            const color = resolveColor(props.content?.clickMarkerColor, '#ef4444');
+
+            if (mode === 'single') {
+                clickMarkerInstances.forEach(m => m.remove());
+                clickMarkerInstances = [];
+            }
+
+            const marker = new mapboxgl.Marker({ color })
+                .setLngLat([lng, lat])
+                .addTo(map);
+            clickMarkerInstances.push(marker);
+
+            const addressFeatures = await reverseGeocode(lng, lat);
+            const markerEntry = { lng, lat, address: addressFeatures };
+
+            if (mode === 'single') {
+                setPlacedMarkers([markerEntry]);
+            } else {
+                setPlacedMarkers([...placedMarkers.value, markerEntry]);
+            }
+            setLastPlacedAddress(addressFeatures);
+
+            emit('trigger-event', {
+                name: 'marker-placed',
+                event: { lngLat: { lng, lat }, address: addressFeatures },
+            });
+        };
+
         onMounted(async () => {
             await nextTick();
             if (props.content?.mode !== 'addressSearch') initMap();
@@ -712,6 +778,16 @@ export default {
             () => props.content?.showTraffic,
             () => {
                 if (map && map.isStyleLoaded()) syncTraffic();
+            }
+        );
+
+        watch(
+            () => props.content?.markerMode,
+            () => {
+                clickMarkerInstances.forEach(m => m.remove());
+                clickMarkerInstances = [];
+                setPlacedMarkers([]);
+                setLastPlacedAddress(null);
             }
         );
 
